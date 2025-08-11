@@ -11,6 +11,11 @@ dev = [
     "ruff>=0.12.8",
 ]
 
+[tool.ruff]
+exclude = [
+    "migrations",
+]
+
 [tool.ruff.lint]
 select = [
     "E",    # pycodestyle

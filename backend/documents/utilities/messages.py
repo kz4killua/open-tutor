@@ -1,34 +1,26 @@
 import json
-from documents.models import Message, Document
-from documents.utilities.vectorstore import retrieve_relevant_documents
-from django.shortcuts import get_object_or_404
+
 from openai import OpenAI
 
-from .templates import USER_MESSAGE_PROMPT_TEMPLATE, SYSTEM_MESSAGE_PROMPT_TEMPLATE
+from documents.models import Message
+from documents.utilities.vectorstore import retrieve_relevant_documents
 
+from .templates import SYSTEM_MESSAGE_PROMPT_TEMPLATE, USER_MESSAGE_PROMPT_TEMPLATE
 
 client = OpenAI()
 
 
 def construct_user_message(document, query, quote=None):
-    return Message(
-        document=document,
-        role="user",
-        content=query,
-        quote=quote
-    )
+    return Message(document=document, role="user", content=query, quote=quote)
 
 
 def construct_system_message(user_message):
-    
     sources = retrieve_relevant_documents(
         query=f"{user_message.content}\n\n{user_message.quote}",
         user_id=user_message.document.user.id,
-        document_id=user_message.document.id
+        document_id=user_message.document.id,
     )
-    context = "\n".join([
-        item.page_content for item in sources
-    ])
+    context = "\n".join([item.page_content for item in sources])
 
     return Message(
         document=user_message.document,
@@ -36,16 +28,13 @@ def construct_system_message(user_message):
         content=SYSTEM_MESSAGE_PROMPT_TEMPLATE.render(
             context=context,
         ),
-        quote=None
+        quote=None,
     )
 
 
 def construct_assistant_message(user_message):
     return Message(
-        document=user_message.document,
-        role="assistant",
-        content="",
-        quote=None
+        document=user_message.document, role="assistant", content="", quote=None
     )
 
 
@@ -61,22 +50,21 @@ def create_openai_message(message: Message):
     else:
         content = message.content
 
-    return {
-        "role": message.role,
-        "content": content
-    }
+    return {"role": message.role, "content": content}
 
 
-def stream_message_response(user_message, system_message, assistant_message, message_history):
-    
-    messages = list(map(create_openai_message, [
-        system_message, *reversed(message_history), user_message
-    ]))
+def stream_message_response(
+    user_message, system_message, assistant_message, message_history
+):
+    messages = list(
+        map(
+            create_openai_message,
+            [system_message, *reversed(message_history), user_message],
+        )
+    )
 
     completion = client.chat.completions.create(
-        model="gpt-4o",
-        messages=messages,
-        stream=True
+        model="gpt-4o", messages=messages, stream=True
     )
 
     # Commit messages to the database and generate IDs
@@ -91,11 +79,13 @@ def stream_message_response(user_message, system_message, assistant_message, mes
             assistant_message.content += token
 
             # Stream responses as data-only SSEs
-            event = json.dumps({
-                "token": token,
-                "assistant_message_id": assistant_message.id,
-                "user_message_id": user_message.id
-            })
+            event = json.dumps(
+                {
+                    "token": token,
+                    "assistant_message_id": assistant_message.id,
+                    "user_message_id": user_message.id,
+                }
+            )
             yield f"\ndata: {event}\n\n"
 
     # Save changes to the assistant message

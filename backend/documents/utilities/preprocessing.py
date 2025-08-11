@@ -1,11 +1,12 @@
-from typing import Iterable
+from collections.abc import Iterable
+
 import fitz
 import tiktoken
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_core.documents.base import Document as LangChainDocument
 
 # To avoid ambiguity, conflicting Document imports are renamed more explicitly
 from ..models import Document as OpenTutorDocument
-from langchain_core.documents.base import Document as LangChainDocument
 
 
 def clip_text(text: str, max_tokens: int, model_name: str) -> str:
