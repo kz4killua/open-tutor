@@ -1,13 +1,38 @@
 services:
+
   web:
-    build: 
-      context: .
-      dockerfile: Dockerfile
-    image: opentutor-backend
+    container_name: opentutor-web
+    build: .
     env_file:
       - .env
-    environment:
-      - PORT=8000
     ports:
-      - "8000:8000"
-    command: sh -c "chmod +x /app/migrate.sh && /app/entrypoint.sh"
+      - "127.0.0.1:${PORT}:${PORT}"
+    command: /app/docker-entrypoint.sh
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost ${PORT}"]
+      interval: 5s
+      retries: 5
+    volumes:
+      - ./media:/app/media
+      - ./staticfiles:/app/staticfiles
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    container_name: opentutor-db
+    image: postgres:16-alpine
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
+    name: opentutor-postgres-data
