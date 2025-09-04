@@ -12,10 +12,10 @@ server {
     }
 
     location /media/ {
-        alias /var/www/course-alerts/backend/media/;
+        alias /var/www/open-tutor/backend/media/;
     }
 
     location /static/ {
-        alias /var/www/course-alerts/backend/staticfiles/;
+        alias /var/www/open-tutor/backend/staticfiles/;
     }
 }
