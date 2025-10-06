@@ -176,11 +176,8 @@ if DEVELOPMENT_MODE:
     )
 
 # This fixes the bug with media files being loaded over HTTP.
-# (Remove this once Django no longer serves media files.)
-if DEVELOPMENT_MODE:
-    USE_X_FORWARDED_HOST = True
-    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+USE_X_FORWARDED_HOST = True
 
 # Configure Django CORS headers
 CORS_ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "").split(",")
